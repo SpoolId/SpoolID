@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  firmware:
+    name: Build firmware (ESP32-C3)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+            ~/.cache/pip
+          key: pio-${{ runner.os }}-${{ hashFiles('firmware/platformio.ini') }}
+      - name: Install PlatformIO
+        run: pip install platformio
+      - name: Prepare generated + secret files
+        run: |
+          python tools/gen_db_header.py
+          cp firmware/include/secrets.h.example firmware/include/secrets.h
+      - name: Build
+        run: pio run -d firmware
+
+  web:
+    name: Build web assets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Generate DB header + gzip web assets
+        run: |
+          python tools/gen_db_header.py
+          python tools/build_web.py
+
+  desktop:
+    name: Lint desktop app
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: Install dependencies
+        run: pip install -r desktop/requirements.txt
+      - name: Byte-compile
+        run: python -m compileall desktop/spoolid
+      - name: Import smoke
+        run: PYTHONPATH=desktop python -c "import spoolid.tui, spoolid.serial_link, spoolid.material_db"

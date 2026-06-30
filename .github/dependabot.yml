@@ -1,0 +1,15 @@
+version: 2
+updates:
+  # Python desktop app
+  - package-ecosystem: pip
+    directory: /desktop
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  # GitHub Actions used by the CI workflow
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5

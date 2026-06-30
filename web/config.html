@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SpoolID · Config</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <h1>SpoolID · Config</h1>
+    <a class="nav" href="/">Back</a>
+  </header>
+
+  <main>
+    <fieldset>
+      <legend>Material database</legend>
+      <label>Upload material_database.json
+        <input type="file" id="dbfile" accept=".json,application/json">
+      </label>
+      <button id="upload">Gzip &amp; upload</button>
+      <label>Or pull from printer (host/IP)
+        <input type="text" id="host" placeholder="192.168.1.50">
+      </label>
+      <button id="pull">Download from printer</button>
+    </fieldset>
+
+    <fieldset>
+      <legend>WiFi (station)</legend>
+      <label>SSID <input type="text" id="wifiSsid"></label>
+      <label>Password <input type="password" id="wifiPass" placeholder="(unchanged)"></label>
+      <label>mDNS hostname (&lt;name&gt;.local) <input type="text" id="hostname" placeholder="spoolid"></label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Access point (fallback)</legend>
+      <label>AP SSID <input type="text" id="apSsid"></label>
+      <label>AP password <input type="password" id="apPass" placeholder="(unchanged, >=8 chars)"></label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Serial</legend>
+      <label>Log level
+        <select id="logLevel"></select>
+      </label>
+      <label>Baud rate
+        <select id="baud"></select>
+      </label>
+    </fieldset>
+
+    <button id="save">Save settings</button>
+    <p id="status" class="status"></p>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const setStatus = (m, err) => {
+      const s = $("status");
+      s.textContent = m;
+      s.className = "status" + (err ? " err" : m ? " ok" : "");
+    };
+
+    // Populate selects from the device spec (firmware is the source of truth).
+    async function loadSpec() {
+      const spec = await (await fetch("/api/spec")).json();
+      $("logLevel").innerHTML = (spec.logLevels || [])
+        .map((l, i) => `<option value="${i}">${l}</option>`).join("");
+      $("baud").innerHTML = (spec.baudRates || [])
+        .map((b) => `<option>${b}</option>`).join("");
+    }
+
+    async function load() {
+      const c = await (await fetch("/api/config")).json();
+      $("wifiSsid").value = c.wifiSsid || "";
+      $("hostname").value = c.hostname || "";
+      $("apSsid").value = c.apSsid || "";
+      $("logLevel").value = c.logLevel ?? 3;
+      $("baud").value = c.baud ?? 115200;
+    }
+
+    $("upload").onclick = async () => {
+      const f = $("dbfile").files[0];
+      if (!f) return setStatus("pick a file first", true);
+      setStatus("gzipping…", false);
+      // Compress in the browser; the ESP32 has no runtime gzip compressor.
+      const gz = await new Response(
+        f.stream().pipeThrough(new CompressionStream("gzip"))
+      ).blob();
+      const res = await fetch("/api/db", {
+        method: "POST",
+        headers: { "Content-Type": "application/octet-stream" },
+        body: gz,
+      });
+      setStatus((await res.json()).ok ? "DB uploaded ✓" : "upload failed", !(await res.ok));
+    };
+
+    $("pull").onclick = async () => {
+      const host = $("host").value.trim();
+      if (!host) return setStatus("enter printer host/IP", true);
+      setStatus("downloading from printer…", false);
+      const res = await fetch("/api/db/pull", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ host }),
+      });
+      const j = await res.json();
+      setStatus(j.ok ? "DB pulled from printer ✓" : `error: ${j.error}`, !j.ok);
+    };
+
+    $("save").onclick = async () => {
+      const body = {
+        apSsid: $("apSsid").value,
+        wifiSsid: $("wifiSsid").value,
+        hostname: $("hostname").value,
+        logLevel: Number($("logLevel").value),
+        baud: Number($("baud").value),
+      };
+      if ($("wifiPass").value) body.wifiPass = $("wifiPass").value;
+      if ($("apPass").value) body.apPass = $("apPass").value;
+      const res = await fetch("/api/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const j = await res.json();
+      setStatus(j.ok ? "saved ✓ reboot to apply WiFi changes" : "save failed", !j.ok);
+    };
+
+    loadSpec().then(load);
+  </script>
+</body>
+</html>

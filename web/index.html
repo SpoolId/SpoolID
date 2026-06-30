@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SpoolID</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <h1>SpoolID</h1>
+    <a class="nav" href="/config">Config</a>
+  </header>
+
+  <main>
+    <label>Brand
+      <select id="brand"></select>
+    </label>
+
+    <label>Filament
+      <select id="filament"></select>
+    </label>
+
+    <label>Spool size
+      <select id="size"></select>
+    </label>
+
+    <fieldset>
+      <legend>Color</legend>
+      <div id="swatches" class="swatches"></div>
+      <label class="custom">Custom
+        <input type="color" id="custom" value="#1200F6">
+      </label>
+      <div class="preview">
+        <span id="chip" class="chip"></span>
+        <code id="hex">#1200F6</code>
+      </div>
+    </fieldset>
+
+    <button id="write">Write tag</button>
+    <p id="status" class="status"></p>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

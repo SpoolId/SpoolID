@@ -1,0 +1,42 @@
+/* SpoolID TUI styles */
+
+Label {
+    margin: 1 0 0 1;
+    color: $text-muted;
+}
+
+Select, Input {
+    width: 50;
+    margin: 0 0 0 1;
+}
+
+#color-row {
+    height: auto;
+}
+
+#color-row Select {
+    width: 32;
+}
+
+#color-preview {
+    width: 4;
+    height: 3;
+    margin: 0 1;
+}
+
+#color-row Input {
+    width: 24;
+}
+
+Button {
+    margin: 1 0 0 1;
+}
+
+#write-status, #config-status {
+    margin: 1 0 0 1;
+    color: $success;
+}
+
+#write-status.error, #config-status.error {
+    color: $error;
+}
