@@ -7,16 +7,42 @@ on:
   workflow_dispatch:
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      firmware: ${{ steps.filter.outputs.firmware }}
+      web: ${{ steps.filter.outputs.web }}
+      desktop: ${{ steps.filter.outputs.desktop }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            firmware:
+              - 'firmware/**'
+              - 'tools/gen_db_header.py'
+              - 'material_database.json'
+            web:
+              - 'web/**'
+              - 'tools/build_web.py'
+              - 'tools/gen_db_header.py'
+              - 'material_database.json'
+            desktop:
+              - 'desktop/**'
+
   firmware:
+    needs: changes
+    if: needs.changes.outputs.firmware == 'true'
     name: Build firmware (ESP32-C3)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Cache PlatformIO
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.platformio
@@ -32,11 +58,13 @@ jobs:
         run: pio run -d firmware
 
   web:
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     name: Build web assets
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Generate DB header + gzip web assets
@@ -45,11 +73,13 @@ jobs:
           python tools/build_web.py
 
   desktop:
+    needs: changes
+    if: needs.changes.outputs.desktop == 'true'
     name: Lint desktop app
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.14"
       - name: Install dependencies
