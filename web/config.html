@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SpoolID · Config</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <h1>SpoolID · Config</h1>
+    <a class="nav" href="/">Back</a>
+  </header>
+
+  <main>
+    <nav class="subtabs">
+      <button id="subDevice" class="subtab">Device</button>
+      <button id="subDb" class="subtab">Material database</button>
+      <button id="subOta" class="subtab">OTA</button>
+    </nav>
+
+    <!-- Device pane. -->
+    <div id="paneDevice" class="pane">
+      <fieldset>
+        <legend>WiFi (station)</legend>
+        <label>SSID <input type="text" id="wifiSsid"></label>
+        <label>Password <input type="password" id="wifiPass" placeholder="(unchanged)"></label>
+        <label>mDNS hostname (&lt;name&gt;.local) <input type="text" id="hostname" placeholder="spoolid"></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Access point (fallback)</legend>
+        <label>AP SSID <input type="text" id="apSsid"></label>
+        <label>AP password <input type="password" id="apPass" placeholder="(unchanged, >=8 chars)"></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Serial</legend>
+        <label>Log level
+          <select id="logLevel"></select>
+        </label>
+        <label>Baud rate
+          <select id="baud"></select>
+        </label>
+      </fieldset>
+
+      <button id="save">Save settings</button>
+      <p id="status" class="status"></p>
+    </div>
+
+    <!-- Material database pane. -->
+    <div id="paneDb" class="pane" hidden>
+      <fieldset>
+        <legend>Material database</legend>
+        <label>Upload material_database.json
+          <input type="file" id="dbfile" accept=".json,application/json">
+        </label>
+        <button id="upload">Gzip &amp; upload</button>
+        <p id="dbStatus" class="status"></p>
+      </fieldset>
+    </div>
+
+    <!-- OTA pane. -->
+    <div id="paneOta" class="pane" hidden>
+      <fieldset>
+        <legend>Firmware update (OTA)</legend>
+        <label>Image file (firmware.bin or littlefs.bin)
+          <input type="file" id="otaFile" accept=".bin,application/octet-stream">
+        </label>
+        <label>Image type
+          <select id="otaTarget">
+            <option value="app">Application (firmware.bin)</option>
+            <option value="fs">Filesystem / web (littlefs.bin)</option>
+          </select>
+        </label>
+        <button id="flash">Upload &amp; flash</button>
+        <progress id="otaProg" max="100" value="0" hidden style="width:100%"></progress>
+        <p id="otaStatus" class="status"></p>
+      </fieldset>
+    </div>
+  </main>
+
+  <script type="module" src="/src/config.ts"></script>
+</body>
+</html>
