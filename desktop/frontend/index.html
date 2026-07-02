@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SpoolID</title>
+</head>
+<body>
+  <header>
+    <h1>SpoolID</h1>
+    <span class="subtitle">Creality RFID spool writer</span>
+    <button id="disconnect" class="ghost" hidden>Disconnect</button>
+  </header>
+
+  <!-- Connect gate: shown until a device is connected. -->
+  <section id="gate" class="gate">
+    <div class="card">
+      <h2>Connect a device</h2>
+      <p id="gateHint" class="hint">Scanning for SpoolID devices…</p>
+      <div class="connbar">
+        <select id="port" class="grow"></select>
+        <button id="rescan" class="icon" title="Rescan ports">⟳</button>
+      </div>
+      <button id="connect" class="accent">Connect</button>
+      <div id="spinner" class="spinner" hidden><span class="ring"></span>connecting…</div>
+      <div id="connStatus" class="conn"></div>
+    </div>
+  </section>
+
+  <div id="compat" class="compat" hidden></div>
+
+  <!-- View switch (revealed once connected). -->
+  <nav class="tabs" id="nav">
+    <button id="navWrite" class="tab">Write</button>
+    <button id="navConfig" class="tab">Config</button>
+  </nav>
+
+  <main id="app">
+    <!-- Write view. -->
+    <section id="writeView">
+      <label>Brand
+        <select id="brand"></select>
+      </label>
+      <label>Filament
+        <select id="filament"></select>
+      </label>
+      <label>Spool size
+        <select id="size"></select>
+      </label>
+
+      <fieldset>
+        <legend>Color</legend>
+        <div id="swatches" class="swatches"></div>
+        <div class="preview">
+          <span id="chip" class="chip"></span>
+          <code id="hex">#000000</code>
+          <input type="text" id="custom" class="hexinput" placeholder="RRGGBB" maxlength="7" hidden>
+        </div>
+      </fieldset>
+
+      <div class="btnrow">
+        <button id="write" class="accent">Write tag</button>
+        <button id="read">Read tag</button>
+      </div>
+      <div id="readout" class="readout"></div>
+      <p id="writeStatus" class="status"></p>
+    </section>
+
+    <!-- Config view: Device / Material database / OTA sub-tabs. -->
+    <section id="configView" hidden>
+      <nav class="subtabs">
+        <button id="subDevice" class="subtab">Device</button>
+        <button id="subDb" class="subtab">Material database</button>
+        <button id="subOta" class="subtab">OTA</button>
+      </nav>
+
+      <!-- Device pane. -->
+      <div id="paneDevice" class="pane">
+        <fieldset>
+          <legend>WiFi (station)</legend>
+          <label>SSID <input type="text" id="wifiSsid"></label>
+          <label>Password <input type="password" id="wifiPass" placeholder="(unchanged)"></label>
+          <label>mDNS hostname (&lt;name&gt;.local) <input type="text" id="hostname" placeholder="spoolid"></label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Access point (fallback)</legend>
+          <label>AP SSID <input type="text" id="apSsid"></label>
+          <label>AP password <input type="password" id="apPass" placeholder="(unchanged, &gt;=8 chars)"></label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Serial</legend>
+          <label>Log level <select id="logLevel"></select></label>
+          <label>Baud rate <select id="baud"></select></label>
+        </fieldset>
+
+        <button id="save" class="accent">Save settings</button>
+        <p id="configStatus" class="status"></p>
+      </div>
+
+      <!-- Material database pane. -->
+      <div id="paneDb" class="pane" hidden>
+        <fieldset>
+          <legend>Material database</legend>
+          <p class="hint">Replace the device's material_database.json (used by its web UI).</p>
+          <button id="uploadDb" class="accent">Choose file &amp; upload…</button>
+          <label>Or pull from a printer (host/IP)
+            <input type="text" id="dbHost" placeholder="192.168.1.50">
+          </label>
+          <button id="dbPull">Pull from printer</button>
+          <p id="dbStatus" class="status"></p>
+        </fieldset>
+      </div>
+
+      <!-- OTA pane. -->
+      <div id="paneOta" class="pane" hidden>
+        <fieldset>
+          <legend>Firmware update (OTA)</legend>
+
+          <button id="checkUpdate">Check for updates</button>
+          <p id="updateInfo" class="status"></p>
+          <div id="updateActions" class="btnrow" hidden>
+            <button id="flashLatestApp" class="accent">Update firmware</button>
+            <button id="flashLatestFs">Update web/filesystem</button>
+          </div>
+
+          <details>
+            <summary>Flash from a URL manually</summary>
+            <label>Image URL (firmware.bin or littlefs.bin)
+              <input type="text" id="otaUrl" placeholder="https://github.com/.../releases/download/vX.Y.Z/firmware.bin">
+            </label>
+            <label>Image type
+              <select id="otaTarget">
+                <option value="app">Application (firmware.bin)</option>
+                <option value="fs">Filesystem / web (littlefs.bin)</option>
+              </select>
+            </label>
+            <button id="flash">Download &amp; flash</button>
+          </details>
+          <div class="progress" hidden><div id="otaBar" class="bar"></div></div>
+          <p id="otaStatus" class="status"></p>
+        </fieldset>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
