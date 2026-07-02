@@ -1,0 +1,194 @@
+/* CrealityPrint-inspired dark theme (palette lifted from the old Tkinter gui.py). */
+:root {
+  --accent: #15c059;
+  --accent-act: #17cc5f;
+  --accent-text: #08130c;
+  --bg: #1b1b1b;
+  --surface: #2e2e2e;
+  --border: #3e3e45;
+  --text: #e8e8e8;
+  --muted: #bbbbbe;
+  --err: #e5484d;
+}
+
+* { box-sizing: border-box; }
+
+/* The [hidden] attribute must win over element display rules below (e.g. the
+   `section { display: grid }` used for the two views and `.hexinput`). */
+[hidden] { display: none !important; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  font: 15px/1.5 system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Header */
+header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 16px 18px 6px;
+}
+header h1 { margin: 0; font-size: 24px; font-weight: 700; color: var(--accent); }
+.subtitle { color: var(--muted); font-size: 13px; }
+
+/* Connection bar */
+.connbar {
+  display: flex;
+  gap: 8px;
+  padding: 8px 18px 0;
+}
+.connbar .grow { flex: 1; }
+.conn {
+  padding: 4px 18px 0;
+  font-size: 13px;
+  min-height: 1.4em;
+}
+.conn.err { color: var(--err); }
+.conn.ok { color: var(--accent-act); }
+
+/* Connect gate (shown until a device is connected) */
+#disconnect { margin-left: auto; }
+.ghost {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+}
+.ghost:hover:not(:disabled) { background: var(--surface); color: var(--text); }
+.gate { display: grid; place-items: center; padding: 40px 18px; }
+.card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px;
+  display: grid;
+  gap: 12px;
+}
+.card h2 { margin: 0; font-size: 17px; font-weight: 600; }
+.hint { margin: 0; color: var(--muted); font-size: 13px; }
+.card .connbar { padding: 0; }
+.card .conn { padding: 0; min-height: 0; }
+
+/* Loading spinner */
+.spinner { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+.ring {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .ring { animation: none; } }
+
+/* View gating: hide the app until connected. */
+#nav, #app { display: none; }
+body[data-state="connected"] .gate { display: none; }
+body[data-state="connected"] #nav { display: flex; }
+body[data-state="connected"] #app { display: block; }
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 6px;
+  padding: 12px 18px 8px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+.tab {
+  background: transparent;
+  color: var(--muted);
+  border: none;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+}
+.tab:hover { background: var(--surface); }
+.tab.active { background: var(--accent); color: var(--accent-text); font-weight: 600; }
+
+/* Config sub-tabs */
+.subtabs { display: flex; gap: 6px; margin-bottom: 14px; }
+.subtab {
+  background: var(--surface);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+}
+.subtab:hover { color: var(--text); }
+.subtab.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
+.pane { display: grid; gap: 14px; }
+
+/* Layout */
+main { padding: 4px 18px 22px; display: block; }
+section { display: grid; gap: 14px; }
+
+label { display: grid; gap: 6px; font-size: 13px; color: var(--muted); }
+
+select, input, button {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 10px;
+}
+select:disabled, input:disabled, button:disabled { opacity: .45; cursor: default; }
+input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+fieldset { border: 1px solid var(--border); border-radius: 10px; display: grid; gap: 12px; }
+legend { color: var(--muted); font-size: 13px; padding: 0 6px; }
+
+/* Buttons */
+button { cursor: pointer; font-weight: 500; }
+button:hover:not(:disabled) { background: var(--border); }
+button.accent {
+  background: var(--accent);
+  color: var(--accent-text);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+button.accent:hover:not(:disabled) { background: var(--accent-act); border-color: var(--accent-act); }
+button.icon { padding: 9px 12px; }
+.btnrow { display: flex; gap: 10px; }
+.btnrow .accent { flex: 1; }
+
+/* Color picker */
+.swatches { display: grid; grid-template-columns: repeat(8, 1fr); gap: 8px; }
+.swatch {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+.swatch.sel { border-color: var(--text); outline: 2px solid var(--accent); }
+.preview { display: flex; align-items: center; gap: 10px; }
+.chip { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border); display: inline-block; }
+.hexinput { width: 8em; text-transform: uppercase; }
+
+/* Compatibility banner (firmware/desktop version mismatch) */
+.compat { padding: 4px 18px 0; font-size: 13px; color: #e5a03d; }
+
+/* OTA progress bar */
+.progress { height: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.bar { height: 100%; width: 0; background: var(--accent); transition: width .12s linear; }
+
+/* Status text */
+.readout { font-size: 13px; color: var(--accent-act); min-height: 1.4em; }
+.status { min-height: 1.4em; font-size: 13px; color: var(--muted); margin: 0; }
+.status.err { color: var(--err); }
+.status.ok { color: var(--accent-act); }
