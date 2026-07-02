@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      firmware: ${{ steps.filter.outputs.firmware }}
+      web: ${{ steps.filter.outputs.web }}
+      desktop: ${{ steps.filter.outputs.desktop }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            firmware:
+              - 'firmware/**'
+              - 'tools/gen_db_header.py'
+              - 'material_database.json'
+            web:
+              - 'web/**'
+              - 'tools/build_web.py'
+              - 'tools/gen_db_header.py'
+              - 'material_database.json'
+            desktop:
+              - 'desktop/**'
+
+  firmware:
+    needs: changes
+    if: needs.changes.outputs.firmware == 'true'
+    name: Build firmware (ESP32-C3)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Cache PlatformIO
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.platformio
+            ~/.cache/pip
+          key: pio-${{ runner.os }}-${{ hashFiles('firmware/platformio.ini') }}
+      - name: Install PlatformIO
+        run: pip install platformio
+      - name: Prepare generated + secret files
+        run: |
+          python tools/gen_db_header.py
+          cp firmware/include/secrets.h.example firmware/include/secrets.h
+      - name: Build
+        run: pio run -d firmware
+
+  web:
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
+    name: Build web assets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - name: Enable pnpm (via corepack)
+        run: corepack enable
+      - name: Generate DB header + build/gzip web assets
+        # build_web.py runs the Vite build (pnpm) then gzips web/dist.
+        run: |
+          python tools/gen_db_header.py
+          python tools/build_web.py
+
+  desktop:
+    needs: changes
+    if: needs.changes.outputs.desktop == 'true'
+    name: Build desktop app (Wails)
+    # Pinned to 22.04 for libwebkit2gtk-4.0-dev (dropped on ubuntu-24.04).
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - name: Enable pnpm (via corepack)
+        run: corepack enable
+      - name: Install Wails system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libgtk-3-dev libwebkit2gtk-4.0-dev
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0
+      - name: Build
+        # `wails build` generates bindings, installs frontend deps (pnpm),
+        # type-checks (tsc) + bundles the frontend, then compiles the Go binary.
+        run: cd desktop && wails build
+      - name: Lint frontend (ESLint)
+        # deps + generated bindings already present from the build above.
+        run: cd desktop/frontend && pnpm lint
