@@ -1,0 +1,131 @@
+name: Release
+
+# release-please maintains a Release PR from Conventional Commits; merging it
+# tags vX.Y.Z + creates the GitHub Release. The build jobs run in the SAME
+# workflow (a GITHUB_TOKEN-created release can't trigger a separate workflow),
+# gated on release_created, and attach firmware + desktop artifacts to the tag.
+# Firmware and desktop share one lockstep version (from the tag) so they always
+# match (same minor is the compatibility requirement).
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.rp.outputs.release_created }}
+      tag_name: ${{ steps.rp.outputs.tag_name }}
+      version: ${{ steps.rp.outputs.version }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: rp
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  firmware:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
+    name: Build + attach firmware
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - name: Enable pnpm (via corepack)
+        run: corepack enable
+      - name: Install PlatformIO
+        run: pip install platformio
+      - name: Prepare generated + secret files
+        # build_web.py runs the Vite build (pnpm) then gzips web/dist.
+        run: |
+          python tools/gen_db_header.py
+          python tools/build_web.py
+          cp firmware/include/secrets.h.example firmware/include/secrets.h
+      - name: Build firmware + filesystem (version from tag)
+        env:
+          PLATFORMIO_BUILD_FLAGS: -DFW_VERSION='"${{ needs.release-please.outputs.version }}"'
+        run: |
+          pio run -d firmware
+          pio run -d firmware -t buildfs
+      - name: Collect artifacts + checksums
+        run: |
+          out=firmware/.pio/build/xiao_esp32c3
+          cp "$out/firmware.bin" firmware.bin
+          cp "$out/littlefs.bin" littlefs.bin 2>/dev/null || cp "$out/spiffs.bin" littlefs.bin
+          md5sum firmware.bin littlefs.bin | tee checksums-md5.txt
+          sha256sum firmware.bin littlefs.bin | tee checksums-sha256.txt
+      - name: Attach to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ needs.release-please.outputs.tag_name }}" \
+            firmware.bin littlefs.bin checksums-md5.txt checksums-sha256.txt --clobber
+
+  desktop:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
+    name: Build + attach desktop (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # UPX is skipped on macOS: modern macOS kills UPX-packed binaries and
+          # it breaks code signing. Linux/Windows compress fine.
+          - os: macos-latest
+            artifact: SpoolID-macos.zip
+            upx: ""
+          - os: windows-latest
+            artifact: SpoolID-windows.zip
+            upx: "-upx"
+          - os: ubuntu-22.04
+            artifact: SpoolID-linux.zip
+            upx: "-upx"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.25"
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - name: Enable pnpm (via corepack)
+        run: corepack enable
+      - name: Install Wails system deps (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libgtk-3-dev libwebkit2gtk-4.0-dev
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0
+      - name: Install UPX
+        if: matrix.upx != ''
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then sudo apt-get install -y upx-ucl; fi
+          if [ "$RUNNER_OS" = "Windows" ]; then choco install upx -y; fi
+      - name: Build (version from tag)
+        run: cd desktop && wails build ${{ matrix.upx }} -ldflags "-X main.version=${{ needs.release-please.outputs.version }}"
+      - name: Package artifact
+        shell: bash
+        run: |
+          cd desktop/build/bin
+          case "${{ runner.os }}" in
+            macOS)   zip -ry "$GITHUB_WORKSPACE/${{ matrix.artifact }}" SpoolID.app ;;
+            Windows) 7z a "$GITHUB_WORKSPACE/${{ matrix.artifact }}" SpoolID.exe ;;
+            Linux)   zip -j "$GITHUB_WORKSPACE/${{ matrix.artifact }}" SpoolID ;;
+          esac
+      - name: Attach to release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${{ needs.release-please.outputs.tag_name }}" "${{ matrix.artifact }}" --clobber
