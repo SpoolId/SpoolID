@@ -78,17 +78,21 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # UPX is skipped on macOS: modern macOS kills UPX-packed binaries and
-          # it breaks code signing. Linux/Windows compress fine.
+          # macOS: build a universal binary (arm64 + amd64) so one .app runs on
+          # both Apple Silicon and Intel. UPX is skipped on macOS (modern macOS
+          # kills UPX-packed binaries + it breaks signing); Linux/Windows compress.
           - os: macos-latest
-            artifact: SpoolID-macos.zip
+            artifact: SpoolID-macos-universal.zip
             upx: ""
+            platform: "-platform darwin/universal"
           - os: windows-latest
             artifact: SpoolID-windows.zip
             upx: "-upx"
+            platform: ""
           - os: ubuntu-22.04
             artifact: SpoolID-linux.zip
             upx: "-upx"
+            platform: ""
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
@@ -114,7 +118,7 @@ jobs:
           if [ "$RUNNER_OS" = "Linux" ]; then sudo apt-get install -y upx-ucl; fi
           if [ "$RUNNER_OS" = "Windows" ]; then choco install upx -y; fi
       - name: Build (version from tag)
-        run: cd desktop && wails build ${{ matrix.upx }} -ldflags "-X main.version=${{ needs.release-please.outputs.version }}"
+        run: cd desktop && wails build ${{ matrix.upx }} ${{ matrix.platform }} -ldflags "-X main.version=${{ needs.release-please.outputs.version }}"
       - name: Package artifact
         shell: bash
         run: |
