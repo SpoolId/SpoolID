@@ -1,12 +1,4 @@
-:root {
-  --bg: #14161a;
-  --card: #1e2127;
-  --fg: #e7e9ee;
-  --muted: #9aa0aa;
-  --accent: #3894e1;
-  --ok: #52d048;
-  --err: #ee301a;
-}
+/* Palette comes from @spoolid/core tokens.css (imported by each page). */
 * { box-sizing: border-box; }
 
 /* [hidden] must win over the element display rules below (e.g. .pane grid). */
@@ -15,7 +7,7 @@
 /* Config sub-tabs */
 .subtabs { display: flex; gap: 8px; margin-bottom: 16px; }
 .subtab {
-  background: var(--card);
+  background: var(--surface);
   color: var(--muted);
   border: 1px solid #2a2e36;
   border-radius: 8px;
@@ -24,21 +16,21 @@
   font: inherit;
   font-size: 14px;
 }
-.subtab:hover { color: var(--fg); }
+.subtab:hover { color: var(--text); }
 .subtab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 .pane { display: grid; gap: 16px; }
 body {
   margin: 0;
   font: 16px/1.5 system-ui, sans-serif;
   background: var(--bg);
-  color: var(--fg);
+  color: var(--text);
 }
 header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 14px 18px;
-  background: var(--card);
+  background: var(--surface);
   border-bottom: 1px solid #2a2e36;
 }
 header h1 { font-size: 20px; margin: 0; }
@@ -47,8 +39,8 @@ main { max-width: 460px; margin: 0 auto; padding: 18px; display: grid; gap: 16px
 label { display: grid; gap: 6px; font-size: 14px; color: var(--muted); }
 select, input, button {
   font: inherit;
-  color: var(--fg);
-  background: var(--card);
+  color: var(--text);
+  background: var(--surface);
   border: 1px solid #2a2e36;
   border-radius: 8px;
   padding: 10px;
@@ -62,7 +54,7 @@ legend { color: var(--muted); font-size: 14px; padding: 0 6px; }
   border: 2px solid transparent;
   cursor: pointer;
 }
-.swatch.sel { border-color: var(--fg); outline: 2px solid var(--accent); }
+.swatch.sel { border-color: var(--text); outline: 2px solid var(--accent); }
 .custom { flex-direction: row; align-items: center; margin-top: 12px; }
 .preview { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
 .chip { width: 28px; height: 28px; border-radius: 6px; border: 1px solid #2a2e36; display: inline-block; }

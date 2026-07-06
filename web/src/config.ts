@@ -1,9 +1,10 @@
 // SpoolID device web UI — config page: Device / Material database / OTA sub-tabs.
-// Firmware is the source of truth: the selects come from /api/spec.
-// (style.css is served as a static asset via <link>, not imported.)
+// Firmware is the source of truth: the selects come from /api/spec. Shared
+// logic lives in @spoolid/core; this file is DOM glue only.
+import "@spoolid/core/tokens.css";
+import "./style.css";
+import { isFilesystemImage } from "@spoolid/core";
 
-// Helpers are inlined (not a shared module) so each page bundles to a single
-// self-contained file — no shared chunk for the device to route.
 const $ = <T extends HTMLElement = HTMLElement>(id: string): T =>
   document.getElementById(id) as T;
 const sel = (id: string) => $<HTMLSelectElement>(id);
@@ -89,8 +90,8 @@ btn("upload").onclick = async () => {
 // ---- firmware OTA (upload a .bin; the device self-flashes via Update) ----
 // Auto-pick the image type from the file name (littlefs.bin -> fs, else app).
 inp("otaFile").onchange = () => {
-  const name = (inp("otaFile").files?.[0]?.name || "").toLowerCase();
-  if (name) sel("otaTarget").value = /littlefs|spiffs|filesystem/.test(name) ? "fs" : "app";
+  const name = inp("otaFile").files?.[0]?.name || "";
+  if (name) sel("otaTarget").value = isFilesystemImage(name) ? "fs" : "app";
 };
 
 // XHR (not fetch) for upload progress. MD5 is optional firmware-side, so the

@@ -1,16 +1,5 @@
-/* CrealityPrint-inspired dark theme (palette lifted from the old Tkinter gui.py). */
-:root {
-  --accent: #15c059;
-  --accent-act: #17cc5f;
-  --accent-text: #08130c;
-  --bg: #1b1b1b;
-  --surface: #2e2e2e;
-  --border: #3e3e45;
-  --text: #e8e8e8;
-  --muted: #bbbbbe;
-  --err: #e5484d;
-}
-
+/* CrealityPrint-inspired dark theme. Palette comes from @spoolid/core tokens.css
+   (imported in main.ts before this file). */
 * { box-sizing: border-box; }
 
 /* The [hidden] attribute must win over element display rules below (e.g. the

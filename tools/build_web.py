@@ -27,7 +27,8 @@ def build_web() -> None:
     pnpm = shutil.which("pnpm")
     if not pnpm:
         sys.exit("pnpm not found — install Node + run `corepack enable`, or pass --skip-build")
-    subprocess.run([pnpm, "--dir", str(WEB), "install", "--prefer-offline"], check=True)
+    # Root pnpm workspace: installs web + spec/ts (the shared @spoolid/core).
+    subprocess.run([pnpm, "--dir", str(ROOT), "install", "--prefer-offline"], check=True)
     subprocess.run([pnpm, "--dir", str(WEB), "build"], check=True)
 
 

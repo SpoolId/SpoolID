@@ -3,12 +3,22 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "SpoolID shared core: wire-contract validation tooling (full package lands with the shared-client refactor)",
+  "description": "SpoolID shared core: generated wire types, client logic, design tokens, spec validation",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tokens.css": "./tokens.css"
+  },
   "scripts": {
+    "generate": "json2ts --cwd ../v2/schemas -i '../v2/schemas/*.schema.json' -o src/generated/",
+    "build": "pnpm generate && tsc --noEmit",
+    "test": "pnpm generate && vitest run",
     "validate": "node scripts/validate.mjs"
   },
   "devDependencies": {
     "ajv": "^8.17.1",
-    "ajv-formats": "^3.0.1"
+    "ajv-formats": "^3.0.1",
+    "json-schema-to-typescript": "^15.0.4",
+    "typescript": "~6.0.3",
+    "vitest": "^4.0.7"
   }
 }

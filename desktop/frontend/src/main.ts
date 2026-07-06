@@ -2,7 +2,17 @@
 // UI lists (swatches, sizes, log levels, baud rates) and current config over
 // serial, then drive the same brand -> filament -> size -> color -> Write flow
 // as the web UI. Serial calls are bound Go methods (see serial.ts).
+import "@spoolid/core/tokens.css";
 import "./theme.css";
+import {
+  checkCompat,
+  cmpVer,
+  colorName,
+  interpretWriteStatus,
+  isFilesystemImage,
+  readToPrefill,
+} from "@spoolid/core";
+import type { SpecReply, StatusReply, ReadReply, ConfigReply } from "@spoolid/core";
 import {
   appVersion,
   checkUpdate,
@@ -15,31 +25,11 @@ import {
   send,
   uploadDb,
 } from "./serial";
-import type { PortInfo, Release, Reply } from "./serial";
-import { brands, byBrand, loadDb, nameFor } from "./db";
+import type { PortInfo, Release } from "./serial";
+import { brands, byBrand, loadDb } from "./db";
 import type { Material } from "./db";
 
 const BAUD = 115200;
-
-// Friendly names for the Creality swatch palette (presentation only; the hex
-// list comes from the device spec). Unknown hex shows as "Custom".
-const COLOR_NAMES: Record<string, string> = {
-  "1200F6": "Blue",
-  "3894E1": "Light Blue",
-  "FEFF01": "Yellow",
-  "F8D531": "Gold",
-  "F38E24": "Orange",
-  "52D048": "Green",
-  "00FEBE": "Teal",
-  "B700F3": "Purple",
-  "EE301A": "Red",
-  "FA5959": "Coral",
-  "FFFFFF": "White",
-  "D8D8D8": "Light Gray",
-  "4C4C4C": "Dark Gray",
-  "782543": "Maroon",
-  "000000": "Black",
-};
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string): T =>
   document.getElementById(id) as T;
@@ -145,7 +135,7 @@ function show(which: "write" | "config"): void {
 
 // ---- color ----
 function colorLabel(hex: string): string {
-  return `${COLOR_NAMES[hex.toUpperCase()] ?? "Custom"}  #${hex}`;
+  return `${colorName(hex) ?? "Custom"}  #${hex}`;
 }
 
 function setColor(hex: string): void {
@@ -199,45 +189,23 @@ function applyCustom(): void {
 }
 
 // ---- device spec + config ----
-function applySpec(spec: Reply): void {
-  swatches = (spec.colorSwatches ?? []) as string[];
-  options(el.size, (spec.weightLabels ?? []) as string[]);
-  options(el.logLevel, (spec.logLevels ?? []) as string[]);
-  options(el.baud, ((spec.baudRates ?? []) as number[]).map(String));
+function applySpec(spec: SpecReply): void {
+  swatches = spec.colorSwatches ?? [];
+  options(el.size, spec.weightLabels ?? []);
+  options(el.logLevel, spec.logLevels ?? []);
+  options(el.baud, (spec.baudRates ?? []).map(String));
   buildSwatches();
   if (swatches.length) selectSwatch(swatches[0]);
-  checkCompat(String(spec.version ?? ""));
+  // Shared compatibility gate: protocol match on v2+ firmware, major.minor on 1.x.
+  const compat = checkCompat(appVer, spec);
+  el.compat.hidden = compat.compatible;
+  if (!compat.compatible) el.compat.textContent = `⚠ ${compat.message}`;
 }
 
-// ---- version compatibility gate ----
-// Desktop and firmware must share the same major.minor (full match preferred).
-// Dev builds (0.0.0-dev / missing) skip the check.
-function minorOf(v: string): string | null {
-  const m = /^(\d+)\.(\d+)\./.exec(v);
-  return m ? `${m[1]}.${m[2]}` : null;
-}
-
-function checkCompat(fwVer: string): void {
-  const app = minorOf(appVer);
-  const fw = minorOf(fwVer);
-  if (!app || !fw) {
-    el.compat.hidden = true;  // a dev build on either side — don't nag
-    return;
-  }
-  if (app === fw) {
-    el.compat.hidden = true;
-    return;
-  }
-  el.compat.hidden = false;
-  el.compat.textContent =
-    `⚠ version mismatch — desktop v${appVer} vs firmware v${fwVer}. ` +
-    `Update so both share the same minor (Config → Firmware update).`;
-}
-
-function applyConfig(cfg: Reply): void {
-  el.wifiSsid.value = cfg.wifiSsid ?? "";
-  el.hostname.value = cfg.hostname ?? "";
-  el.apSsid.value = cfg.apSsid ?? "";
+function applyConfig(cfg: ConfigReply): void {
+  el.wifiSsid.value = cfg.wifiSsid;
+  el.hostname.value = cfg.hostname;
+  el.apSsid.value = cfg.apSsid;
   if (cfg.logLevel != null) el.logLevel.selectedIndex = Number(cfg.logLevel);
   if (cfg.baud != null) el.baud.value = String(cfg.baud);
 }
@@ -334,9 +302,11 @@ async function doConnect(): Promise<void> {
     return;
   }
   try {
-    const spec = await send({ cmd: "getspec" });
+    const spec = await send<SpecReply>({ cmd: "getspec" });
+    if (!spec.ok) throw new Error(spec.error);
     applySpec(spec);
-    const cfg = await send({ cmd: "getconfig" });
+    const cfg = await send<ConfigReply>({ cmd: "getconfig" });
+    if (!cfg.ok) throw new Error(cfg.error);
     applyConfig(cfg);
     fillBrands();
   } catch (e) {
@@ -389,17 +359,12 @@ async function doWrite(): Promise<void> {
 
 async function pollStatus(): Promise<void> {
   try {
-    const st = await send({ cmd: "status" });
-    const last = st.last;
-    if (!last || !last.done) return;
+    const st = await send<StatusReply>({ cmd: "status" });
+    const outcome = interpretWriteStatus(st.ok ? st : {});
+    if (!outcome.done) return;
     if (polling != null) { clearInterval(polling); polling = null; }
     el.write.disabled = false;
-    if (last.ok) {
-      const enc = last.encrypted ? " (re-encrypted)" : "";
-      setStatus(el.writeStatus, `written ✓  UID ${last.uid}${enc}`, "ok");
-    } else {
-      setStatus(el.writeStatus, `error: ${last.error}`, "err");
-    }
+    setStatus(el.writeStatus, outcome.message ?? "", outcome.ok ? "ok" : "err");
   } catch (e) {
     if (polling != null) { clearInterval(polling); polling = null; }
     el.write.disabled = false;
@@ -411,7 +376,7 @@ async function doRead(): Promise<void> {
   el.read.disabled = true;
   setStatus(el.writeStatus, "reading — tap a tag on the reader…");
   try {
-    const j = await send({ cmd: "read" });
+    const j = await send<ReadReply>({ cmd: "read" });
     if (!j.ok) {
       setStatus(el.writeStatus, `read failed: ${j.error}`, "err");
       return;
@@ -425,30 +390,24 @@ async function doRead(): Promise<void> {
   }
 }
 
-function applyRead(j: Reply): void {
-  const materialId = String(j.materialId ?? "");
-  const m = items.find((x) => x.id === materialId);
-  if (m) {
-    el.brand.value = m.brand;
+function applyRead(j: ReadReply): void {
+  const pre = readToPrefill(j, items);
+  if (pre.material) {
+    el.brand.value = pre.material.brand;
     fillFilaments();
-    el.filament.value = m.id;
+    el.filament.value = pre.material.id;
   }
-  if (j.weight) el.size.value = j.weight;
-
-  const hex = String(j.color ?? "").toUpperCase();
-  if (hex) {
-    if (swatches.some((s) => s.toUpperCase() === hex)) {
-      selectSwatch(hex);
+  if (pre.weight) el.size.value = pre.weight;
+  if (pre.colorHex) {
+    if (swatches.some((s) => s.toUpperCase() === pre.colorHex)) {
+      selectSwatch(pre.colorHex);
     } else {
       selectCustom();
-      el.custom.value = hex;
+      el.custom.value = pre.colorHex;
       applyCustom();
     }
   }
-
-  const label = m ? `${m.brand} ${m.name}` : nameFor(items, materialId) || `id ${materialId}`;
-  const locked = j.encrypted ? " · locked" : "";
-  el.readout.textContent = `read: ${label} · ${j.weight ?? "?"} · #${hex}${locked}`;
+  el.readout.textContent = pre.label;
 }
 
 // ---- config ----
@@ -575,17 +534,6 @@ async function doCheckUpdate(): Promise<void> {
   }
 }
 
-// Compare dotted numeric versions (prerelease suffixes ignored). >0 if a > b.
-function cmpVer(a: string, b: string): number {
-  const pa = a.split(/[.\-+]/).map(Number);
-  const pb = b.split(/[.\-+]/).map(Number);
-  for (let i = 0; i < 3; i++) {
-    const d = (pa[i] || 0) - (pb[i] || 0);
-    if (d) return d;
-  }
-  return 0;
-}
-
 // ---- boot ----
 async function boot(): Promise<void> {
   el.rescan.onclick = () => void refreshPorts();
@@ -606,8 +554,8 @@ async function boot(): Promise<void> {
   el.flash.onclick = () => doFlash();
   // Auto-pick the image type from the URL (littlefs.bin -> fs, else app).
   el.otaUrl.oninput = () => {
-    const u = el.otaUrl.value.toLowerCase();
-    if (u) el.otaTarget.value = /littlefs|spiffs|filesystem/.test(u) ? "fs" : "app";
+    const u = el.otaUrl.value.trim();
+    if (u) el.otaTarget.value = isFilesystemImage(u) ? "fs" : "app";
   };
   el.checkUpdate.onclick = () => void doCheckUpdate();
   el.flashLatestApp.onclick = () => void runFlash(latest?.firmware ?? "", false);
