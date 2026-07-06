@@ -91,26 +91,23 @@ device is also reachable at `http://spoolid.local` (mDNS hostname, configurable)
   from the repo root into `desktop/frontend/` at build time (`copy-db` pnpm script)
   and bundled into the frontend.
 
-## Serial protocol (USB CDC, line-JSON)
+## Wire protocol
 
-Responses are single-line JSON; log lines start with `[`. Commands:
+The full contract — operations, JSON shapes, HTTP + serial bindings, error codes,
+compatibility rules — lives in **[`spec/v2/PROTOCOL.md`](spec/v2/PROTOCOL.md)**
+(JSON Schemas in [`spec/v2/schemas/`](spec/v2/schemas/), validated in CI against
+fixtures produced by the firmware's own reply builders). Quick taste, over USB
+serial (single-line JSON; log lines start with `[`):
 
 ```json
+{"cmd":"getspec"}   // UI lists + firmware version + protocol generation
 {"cmd":"write","materialId":"01001","color":"1200F6","weight":"1KG"}
-{"cmd":"status"}
-{"cmd":"read"}                         // decrypt a tapped tag -> materialId/color/weight
-{"cmd":"dump"}                         // raw (encrypted) blocks 4-6 of a tapped tag
-{"cmd":"beep"}                         // fire the buzzer once (test)
-{"cmd":"getspec"}                      // firmware-owned UI lists + firmware version
-{"cmd":"getconfig"} / {"cmd":"setconfig", ...}
-{"cmd":"dbbegin","size":N} / {"cmd":"dbdata","b":"<base64>"} / {"cmd":"dbend"}  // upload a gzipped DB
-{"cmd":"otabegin","size":N,"target":"app","md5":"..."}  // start an OTA session
-{"cmd":"otadata","b":"<base64 chunk>"}                   // stream image bytes (* N)
-{"cmd":"otaend"}                       // verify + reboot into the new image
+{"cmd":"status"}    // poll for the staged-write outcome
 ```
 
-`getspec` also returns `version` (firmware semver); clients gate compatibility on
-the major.minor pair. The web transport mirrors OTA at `POST /api/ota?target=app|fs&md5=<hex>`.
+Every reply carries `ok`; errors add a stable `code` (`no_tag`, `invalid_params`, …).
+Clients gate compatibility on the `protocol` field; older 1.x firmware (documented in
+[`spec/v1/PROTOCOL.md`](spec/v1/PROTOCOL.md)) is recognized via major.minor fallback.
 
 ## Releases & over-the-air updates
 
