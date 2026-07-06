@@ -16,6 +16,7 @@ jobs:
       firmware: ${{ steps.filter.outputs.firmware }}
       web: ${{ steps.filter.outputs.web }}
       desktop: ${{ steps.filter.outputs.desktop }}
+      spec: ${{ steps.filter.outputs.spec }}
     steps:
       - uses: actions/checkout@v7
       - uses: dorny/paths-filter@v4
@@ -31,8 +32,32 @@ jobs:
               - 'tools/build_web.py'
               - 'tools/gen_db_header.py'
               - 'material_database.json'
+              - 'spec/**'
             desktop:
               - 'desktop/**'
+              - 'spec/**'
+            spec:
+              - 'spec/**'
+              - 'material_database.json'
+
+  spec:
+    needs: changes
+    if: needs.changes.outputs.spec == 'true'
+    name: Validate wire-contract spec
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "26"
+      # corepack is not bundled with Node >= 25; use the pnpm action instead.
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - name: Validate schemas + fixtures
+        run: |
+          pnpm --dir spec/ts install --frozen-lockfile
+          pnpm --dir spec/ts validate
 
   firmware:
     needs: changes
@@ -72,9 +97,11 @@ jobs:
           python-version: "3.12"
       - uses: actions/setup-node@v6
         with:
-          node-version: "22"
-      - name: Enable pnpm (via corepack)
-        run: corepack enable
+          node-version: "26"
+      # corepack is not bundled with Node >= 25; use the pnpm action instead.
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
       - name: Generate DB header + build/gzip web assets
         # build_web.py runs the Vite build (pnpm) then gzips web/dist.
         run: |
@@ -94,9 +121,11 @@ jobs:
           go-version: "1.25"
       - uses: actions/setup-node@v6
         with:
-          node-version: "22"
-      - name: Enable pnpm (via corepack)
-        run: corepack enable
+          node-version: "26"
+      # corepack is not bundled with Node >= 25; use the pnpm action instead.
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
       - name: Install Wails system deps
         run: |
           sudo apt-get update

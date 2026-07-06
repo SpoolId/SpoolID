@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spoolid.github.io/schemas/v2/spec.reply.schema.json",
+  "title": "SpecReply",
+  "type": "object",
+  "properties": {
+    "ok": { "const": true },
+    "protocol": { "const": 2 },
+    "version": { "$ref": "common.schema.json#/$defs/SemVer" },
+    "colorSwatches": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/HexColor6" } },
+    "weightLabels": { "type": "array", "items": { "type": "string" } },
+    "baudRates": { "type": "array", "items": { "type": "integer" } },
+    "logLevels": { "type": "array", "items": { "type": "string" } }
+  },
+  "required": ["ok", "protocol", "version", "colorSwatches", "weightLabels", "baudRates", "logLevels"],
+  "additionalProperties": false
+}

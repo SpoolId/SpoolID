@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spoolid.github.io/schemas/v2/config.params.schema.json",
+  "title": "ConfigParams",
+  "type": "object",
+  "properties": {
+    "wifiSsid": { "type": "string" },
+    "wifiPass": { "type": "string" },
+    "apSsid": { "type": "string" },
+    "apPass": { "type": "string" },
+    "hostname": { "type": "string" },
+    "logLevel": { "type": "integer", "minimum": 0, "maximum": 4 },
+    "baud": { "type": "integer", "minimum": 1 }
+  },
+  "additionalProperties": false
+}

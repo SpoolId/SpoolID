@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spoolid.github.io/schemas/v2/ota.end.reply.schema.json",
+  "title": "OtaEndReply",
+  "type": "object",
+  "properties": {
+    "ok": { "const": true },
+    "reboot": { "const": true }
+  },
+  "required": ["ok", "reboot"],
+  "additionalProperties": false
+}
