@@ -17,6 +17,10 @@ sizes, baud rates, log levels). It builds AND encrypts every payload.
 
 **Web and desktop are thin clients** — they only collect the user's selections and send
 them. They hold no baked constants: they fetch the UI lists from the device at startup.
+Shared client logic (material-DB parsing, read-prefill, status interpretation, color
+normalization, compat gate, design tokens) lives in **`spec/ts` (`@spoolid/core`)**, a
+pnpm-workspace package imported by both frontends; the workspace root is the repo root
+(`pnpm-workspace.yaml`: web, desktop/frontend, spec/ts — one root lockfile).
 - web → HTTP (`web_server.cpp`): `/api/spec`, `/api/db`, `/api/write`, `/api/read`, `/api/status`, `/api/config`, `/api/ota`
 - desktop → line-JSON over USB CDC (`serial_proto.cpp`): `getspec`, `write`, `read`, `status`, `dump`, `getconfig`, `setconfig`, `dbbegin`/`dbdata`/`dbend`, `otabegin`/`otadata`/`otaend`
 
@@ -93,6 +97,10 @@ copies, not the sources). After editing `material_database.json`, re-run `tools/
   run `gen_db_header.py` + `build_web.py` and create `secrets.h`. CI does this in `.github/workflows/ci.yml`.
 - **If `material_database.json` is lost**, recover it by gunzipping the byte array in the
   generated `firmware/src/material_db_default.h` (content-identical, reformatted compact).
+- **`spec/ts/src/generated/` is git-ignored** — TS wire types generated from
+  `spec/v2/schemas` by `pnpm --dir spec/ts generate` (the web/desktop build scripts run
+  it automatically). A `spec/ts`-only change doesn't dirty Wails' frontend hash cache —
+  CI uses `wails build -clean`; locally use `wails build -f` after core changes.
 - **Desktop (Wails) generated files are git-ignored** and rebuilt by `wails build`/`wails dev`:
   `desktop/frontend/wailsjs/` (Go↔JS bindings), `desktop/frontend/dist/`, `desktop/build/bin/`,
   and `desktop/frontend/material_database.json` (copied from the repo root by the `copy-db` pnpm

@@ -14,8 +14,15 @@ import {
 } from "../wailsjs/go/main/App";
 import { EventsOn } from "../wailsjs/runtime/runtime";
 
+import type { ErrorReply } from "@spoolid/core";
+
 export type Cmd = Record<string, unknown>;
-export type Reply = Record<string, any>;
+// Every device reply carries the ok envelope (spec/v2/PROTOCOL.md): success
+// replies have ok: true, errors are ErrorReply (ok: false + error + code) — a
+// discriminated union, so `if (!r.ok)` narrows. Callers pass the concrete
+// success type: send<SpecReply>(...).
+export interface Reply { ok: true }
+export type Result<T> = T | ErrorReply;
 
 export interface Release {
   version: string;
@@ -39,8 +46,8 @@ export const connect = (port: string, baud: number): Promise<void> =>
 
 export const disconnect = (): Promise<void> => Disconnect();
 
-export const send = (cmd: Cmd): Promise<Reply> =>
-  Send(cmd as { [key: string]: any });
+export const send = <T extends Reply = Reply>(cmd: Cmd): Promise<Result<T>> =>
+  Send(cmd as { [key: string]: any }) as Promise<Result<T>>;
 
 // Desktop app version (for the firmware/desktop compatibility gate).
 export const appVersion = (): Promise<string> => Version();

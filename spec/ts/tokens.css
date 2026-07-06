@@ -1,0 +1,16 @@
+/* SpoolID design tokens — the shared palette + names for every client UI.
+ * Token NAMES are part of the wire-spec standard (spec/v2/PROTOCOL.md);
+ * values are themeable. A future printer-brand theme overrides values in a
+ * [data-brand="..."] block; component CSS stays untouched. */
+:root {
+  --bg: #1b1b1b;
+  --surface: #2e2e2e;
+  --text: #e8e8e8;
+  --muted: #bbbbbe;
+  --accent: #15c059;
+  --accent-act: #17cc5f;
+  --accent-text: #08130c;
+  --ok: #52d048;
+  --err: #e5484d;
+  --border: #3e3e45;
+}

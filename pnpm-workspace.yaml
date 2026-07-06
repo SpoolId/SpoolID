@@ -1,3 +1,8 @@
+packages:
+  - web
+  - desktop/frontend
+  - spec/ts
+
 # Allow esbuild (Vite's bundler) to run its install script. pnpm blocks build
 # scripts by default; without this, `pnpm install` errors ERR_PNPM_IGNORED_BUILDS.
 allowBuilds:

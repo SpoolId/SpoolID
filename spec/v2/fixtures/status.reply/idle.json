@@ -1,1 +1,13 @@
-{"ok": true, "pending": false, "mode": "sta", "ip": "192.168.1.50", "last": {"done": false, "ok": false, "encrypted": false, "uid": "", "error": ""}}
+{
+  "ok": true,
+  "pending": false,
+  "mode": "sta",
+  "ip": "192.168.0.183",
+  "last": {
+    "done": false,
+    "ok": false,
+    "encrypted": false,
+    "uid": "",
+    "error": ""
+  }
+}

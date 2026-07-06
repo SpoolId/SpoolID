@@ -151,7 +151,7 @@ jobs:
       - name: Build
         # `wails build` generates bindings, installs frontend deps (pnpm),
         # type-checks (tsc) + bundles the frontend, then compiles the Go binary.
-        run: cd desktop && wails build
+        run: cd desktop && wails build -clean
       - name: Lint frontend (ESLint)
         # deps + generated bindings already present from the build above.
         run: cd desktop/frontend && pnpm lint

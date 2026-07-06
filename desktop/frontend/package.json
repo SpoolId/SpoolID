@@ -6,7 +6,7 @@
   "scripts": {
     "copy-db": "node -e \"require('fs').copyFileSync('../../material_database.json','material_database.json')\"",
     "dev": "pnpm copy-db && vite",
-    "build": "pnpm copy-db && tsc && vite build",
+    "build": "pnpm --dir ../../spec/ts generate && pnpm copy-db && tsc && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -16,5 +16,8 @@
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.62.1",
     "vite": "^8.1.3"
+  },
+  "dependencies": {
+    "@spoolid/core": "workspace:*"
   }
 }

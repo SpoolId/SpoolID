@@ -122,7 +122,7 @@ jobs:
           if [ "$RUNNER_OS" = "Linux" ]; then sudo apt-get install -y upx-ucl; fi
           if [ "$RUNNER_OS" = "Windows" ]; then choco install upx -y; fi
       - name: Build (version from tag)
-        run: cd desktop && wails build ${{ matrix.upx }} ${{ matrix.platform }} -ldflags "-X main.version=${{ needs.release-please.outputs.version }}"
+        run: cd desktop && wails build -clean ${{ matrix.upx }} ${{ matrix.platform }} -ldflags "-X main.version=${{ needs.release-please.outputs.version }}"
       - name: Package artifact
         shell: bash
         run: |

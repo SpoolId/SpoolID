@@ -1,0 +1,5 @@
+{
+  "name": "spoolid-root",
+  "private": true,
+  "description": "pnpm workspace root - packages: web, desktop/frontend, spec/ts"
+}
