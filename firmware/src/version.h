@@ -7,3 +7,7 @@
 #ifndef FW_VERSION
 #define FW_VERSION "0.0.0-dev"
 #endif
+
+// Wire-protocol generation, returned as `protocol` by getspec / /api/spec.
+// Clients require an exact match when present; see spec/v2/PROTOCOL.md.
+#define PROTOCOL_VERSION 2

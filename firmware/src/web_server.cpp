@@ -4,13 +4,12 @@
 #include <ESPAsyncWebServer.h>
 #include <LittleFS.h>
 
-#include "config.h"
+#include "api_core.h"
 #include "logger.h"
 #include "material_db.h"
 #include "ota.h"
 #include "rfid_writer.h"
 #include "spool_data.h"
-#include "ui_spec.h"
 #include "wifi_net.h"
 
 namespace web {
@@ -28,21 +27,22 @@ void sendGz(AsyncWebServerRequest *req, const char *path, const char *type) {
   req->send(resp);
 }
 
-String statusJson() {
-  const rfid::WriteResult &r = rfid::last();
-  JsonDocument doc;
-  doc["pending"] = rfid::hasPending();
-  doc["mode"] = net::isAp() ? "ap" : "sta";
-  doc["ip"] = net::ip();
-  JsonObject last = doc["last"].to<JsonObject>();
-  last["done"] = r.done;
-  last["ok"] = r.ok;
-  last["encrypted"] = r.encrypted;
-  last["uid"] = r.uid;
-  last["error"] = r.error;
+void sendJson(AsyncWebServerRequest *r, int status, const JsonDocument &doc) {
   String out;
   serializeJson(doc, out);
-  return out;
+  r->send(status, "application/json", out);
+}
+
+void sendErr(AsyncWebServerRequest *r, int status, const char *code, const char *msg) {
+  JsonDocument d;
+  apicore::shape::error(d, code, msg);
+  sendJson(r, status, d);
+}
+
+void sendOk(AsyncWebServerRequest *r, void (*fill)(JsonDocument &)) {
+  JsonDocument d;
+  fill(d);
+  sendJson(r, 200, d);
 }
 
 // Accumulate a binary request body across chunks into a buffer (small payloads:
@@ -61,13 +61,8 @@ void registerRoutes() {
   server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest *r) { sendGz(r, "/style.css.gz", "text/css"); });
 
   // ---- UI spec (firmware-owned constants for the clients) ----
-  server.on("/api/spec", HTTP_GET, [](AsyncWebServerRequest *r) {
-    JsonDocument doc;
-    uispec::fill(doc);
-    String out;
-    serializeJson(doc, out);
-    r->send(200, "application/json", out);
-  });
+  server.on("/api/spec", HTTP_GET,
+            [](AsyncWebServerRequest *r) { sendOk(r, apicore::shape::spec); });
 
   // ---- material DB ----
   server.on("/api/db", HTTP_GET, [](AsyncWebServerRequest *r) { matdb::serveTo(r); });
@@ -75,7 +70,7 @@ void registerRoutes() {
   // Upload pre-gzipped DB: stream body chunks directly to LittleFS.
   server.on(
       "/api/db", HTTP_POST,
-      [](AsyncWebServerRequest *r) { r->send(200, "application/json", "{\"ok\":true}"); },
+      [](AsyncWebServerRequest *r) { sendOk(r, apicore::shape::ack); },
       nullptr,
       [](AsyncWebServerRequest *r, uint8_t *data, size_t len, size_t index, size_t total) {
         static File f;
@@ -96,64 +91,54 @@ void registerRoutes() {
       [](AsyncWebServerRequest *r, uint8_t *data, size_t len, size_t index, size_t total) {
         JsonDocument doc;
         if (deserializeJson(doc, data, len)) {
-          r->send(400, "application/json", "{\"ok\":false,\"error\":\"bad json\"}");
+          sendErr(r, 400, "bad_json", "bad json");
           return;
         }
         String payload = spool::build(doc["materialId"] | "", doc["color"] | "",
                                       doc["weight"] | "");
         if (payload.isEmpty()) {
-          r->send(400, "application/json", "{\"ok\":false,\"error\":\"invalid spool params\"}");
+          sendErr(r, 400, "invalid_params", "invalid spool params");
           return;
         }
         rfid::stage(payload);
-        r->send(200, "application/json", "{\"ok\":true,\"staged\":true}");
+        sendOk(r, apicore::shape::writeStaged);
       });
 
   // ---- read (decrypt a tapped tag: for inspection / cloning) ----
   server.on("/api/read", HTTP_GET, [](AsyncWebServerRequest *r) {
-    String data, uid;
-    bool enc;
-    if (!rfid::readTag(data, uid, enc)) {
-      r->send(404, "application/json", "{\"ok\":false,\"error\":\"no tag / auth failed\"}");
+    JsonDocument doc;
+    const char *code;
+    if (!apicore::fillRead(doc, code)) {
+      sendErr(r, 404, code, "no tag / auth failed");
       return;
     }
-    spool::Parsed p = spool::parse(data);
+    sendJson(r, 200, doc);
+  });
+
+  // ---- dump (raw tag blocks as hex, uninterpreted) ----
+  server.on("/api/dump", HTTP_GET, [](AsyncWebServerRequest *r) {
     JsonDocument doc;
-    doc["ok"] = true;
-    doc["uid"] = uid;
-    doc["encrypted"] = enc;
-    doc["materialId"] = p.materialId;
-    doc["color"] = p.color;
-    doc["weight"] = p.weight;
-    String out;
-    serializeJson(doc, out);
-    r->send(200, "application/json", out);
+    const char *code;
+    if (!apicore::fillDump(doc, code)) {
+      sendErr(r, 404, code, "no tag / auth failed");
+      return;
+    }
+    sendJson(r, 200, doc);
   });
 
   // ---- buzzer test ----
   server.on("/api/beep", HTTP_GET, [](AsyncWebServerRequest *r) {
     rfid::testBeep();
-    r->send(200, "application/json", "{\"ok\":true}");
+    sendOk(r, apicore::shape::ack);
   });
 
   // ---- status ----
   server.on("/api/status", HTTP_GET,
-            [](AsyncWebServerRequest *r) { r->send(200, "application/json", statusJson()); });
+            [](AsyncWebServerRequest *r) { sendOk(r, apicore::fillStatus); });
 
   // ---- config ----
-  server.on("/api/config", HTTP_GET, [](AsyncWebServerRequest *r) {
-    Config &c = config::get();
-    JsonDocument doc;
-    doc["wifiSsid"] = c.wifiSsid;
-    doc["apSsid"] = c.apSsid;
-    doc["hostname"] = c.hostname;
-    doc["logLevel"] = c.logLevel;
-    doc["baud"] = c.baud;
-    // passwords intentionally omitted
-    String out;
-    serializeJson(doc, out);
-    r->send(200, "application/json", out);
-  });
+  server.on("/api/config", HTTP_GET,
+            [](AsyncWebServerRequest *r) { sendOk(r, apicore::fillConfigGet); });
 
   server.on(
       "/api/config", HTTP_POST,
@@ -162,20 +147,11 @@ void registerRoutes() {
       [](AsyncWebServerRequest *r, uint8_t *data, size_t len, size_t index, size_t total) {
         JsonDocument doc;
         if (deserializeJson(doc, data, len)) {
-          r->send(400, "application/json", "{\"ok\":false,\"error\":\"bad json\"}");
+          sendErr(r, 400, "bad_json", "bad json");
           return;
         }
-        Config &c = config::get();
-        if (doc["wifiSsid"].is<const char *>()) c.wifiSsid = doc["wifiSsid"].as<String>();
-        if (doc["wifiPass"].is<const char *>()) c.wifiPass = doc["wifiPass"].as<String>();
-        if (doc["apSsid"].is<const char *>()) c.apSsid = doc["apSsid"].as<String>();
-        if (doc["apPass"].is<const char *>()) c.apPass = doc["apPass"].as<String>();
-        if (doc["hostname"].is<const char *>()) c.hostname = doc["hostname"].as<String>();
-        if (doc["logLevel"].is<uint8_t>()) c.logLevel = doc["logLevel"];
-        if (doc["baud"].is<uint32_t>()) c.baud = doc["baud"];
-        config::save();
-        logger::setLevel(static_cast<LogLevel>(c.logLevel));
-        r->send(200, "application/json", "{\"ok\":true,\"reboot\":true}");
+        apicore::applyConfigSet(doc);
+        sendOk(r, apicore::shape::ackReboot);
       });
 
   // ---- OTA firmware/filesystem update ----
@@ -189,13 +165,12 @@ void registerRoutes() {
   server.on(
       "/api/ota", HTTP_POST,
       [](AsyncWebServerRequest *r) {
-        JsonDocument d;
-        d["ok"] = s_otaOk;
-        if (!s_otaOk) d["error"] = s_otaErr;
-        String out;
-        serializeJson(d, out);
-        r->send(s_otaOk ? 200 : 500, "application/json", out);
-        if (s_otaOk) ota::scheduleReboot();
+        if (s_otaOk) {
+          sendOk(r, apicore::shape::ack);
+          ota::scheduleReboot();
+        } else {
+          sendErr(r, 500, "ota_failed", s_otaErr.c_str());
+        }
       },
       nullptr,
       [](AsyncWebServerRequest *r, uint8_t *data, size_t len, size_t index, size_t total) {

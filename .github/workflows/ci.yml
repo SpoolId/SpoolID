@@ -27,6 +27,8 @@ jobs:
               - 'firmware/**'
               - 'tools/gen_db_header.py'
               - 'material_database.json'
+              # the native contract test validates firmware output against the spec
+              - 'spec/v2/schemas/**'
             web:
               - 'web/**'
               - 'tools/build_web.py'
@@ -84,6 +86,20 @@ jobs:
           cp firmware/include/secrets.h.example firmware/include/secrets.h
       - name: Build
         run: pio run -d firmware
+      - name: Wire-contract test (host)
+        # Runs the pure apicore::shape layer natively and dumps every reply
+        # shape to spec/v2/fixtures/generated/ for schema validation below.
+        run: pio test -e native -d firmware
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "26"
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - name: Validate firmware output against spec schemas
+        run: |
+          pnpm --dir spec/ts install --frozen-lockfile
+          pnpm --dir spec/ts validate
 
   web:
     needs: changes
