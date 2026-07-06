@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spoolid.github.io/schemas/v2/db.begin.params.schema.json",
+  "title": "DbBeginParams",
+  "type": "object",
+  "properties": {
+    "size": { "type": "integer", "minimum": 1 }
+  },
+  "required": ["size"],
+  "additionalProperties": false
+}

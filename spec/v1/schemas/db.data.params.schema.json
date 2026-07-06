@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spoolid.github.io/schemas/v1/db.data.params.schema.json",
+  "title": "DbDataParams",
+  "type": "object",
+  "properties": {
+    "b": { "type": "string", "contentEncoding": "base64" }
+  },
+  "required": ["b"],
+  "additionalProperties": false
+}

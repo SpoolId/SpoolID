@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spoolid.github.io/schemas/v2/write.params.schema.json",
+  "title": "WriteParams",
+  "type": "object",
+  "properties": {
+    "materialId": { "type": "string", "minLength": 1 },
+    "color": { "$ref": "common.schema.json#/$defs/HexColor6" },
+    "weight": { "type": "string", "minLength": 1 }
+  },
+  "required": ["materialId", "color", "weight"],
+  "additionalProperties": false
+}

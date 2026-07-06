@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spoolid.github.io/schemas/v1/status.reply.schema.json",
+  "title": "StatusReply",
+  "type": "object",
+  "properties": {
+    "ok": { "const": true },
+    "pending": { "type": "boolean" },
+    "mode": { "enum": ["ap", "sta"] },
+    "ip": { "type": "string" },
+    "last": { "$ref": "common.schema.json#/$defs/LastWrite" }
+  },
+  "required": ["pending", "mode", "ip", "last"],
+  "additionalProperties": false
+}

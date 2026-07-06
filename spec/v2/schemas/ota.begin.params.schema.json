@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spoolid.github.io/schemas/v2/ota.begin.params.schema.json",
+  "title": "OtaBeginParams",
+  "type": "object",
+  "properties": {
+    "size": { "type": "integer", "minimum": 1 },
+    "target": { "$ref": "common.schema.json#/$defs/Target" },
+    "md5": { "$ref": "common.schema.json#/$defs/Md5Hex" }
+  },
+  "required": ["size", "target"],
+  "additionalProperties": false
+}

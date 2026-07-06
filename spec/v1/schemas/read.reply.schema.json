@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spoolid.github.io/schemas/v1/read.reply.schema.json",
+  "title": "ReadReply",
+  "type": "object",
+  "properties": {
+    "ok": { "const": true },
+    "uid": { "$ref": "common.schema.json#/$defs/Uid" },
+    "encrypted": { "type": "boolean" },
+    "materialId": { "type": "string", "minLength": 1 },
+    "color": { "$ref": "common.schema.json#/$defs/HexColor6" },
+    "weight": { "type": "string" }
+  },
+  "required": ["ok", "uid", "encrypted", "materialId", "color", "weight"],
+  "additionalProperties": false
+}

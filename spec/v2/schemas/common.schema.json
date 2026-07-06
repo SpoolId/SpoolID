@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spoolid.github.io/schemas/v2/common.schema.json",
+  "title": "Common",
+  "$defs": {
+    "Uid": { "type": "string", "pattern": "^[0-9A-Fa-f]{8,20}$" },
+    "HexColor6": { "type": "string", "pattern": "^[0-9A-Fa-f]{6}$" },
+    "SemVer": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?$" },
+    "Md5Hex": { "type": "string", "pattern": "^[0-9a-fA-F]{32}$" },
+    "Target": { "enum": ["app", "fs"] },
+    "ErrorCode": {
+      "enum": ["bad_json", "invalid_params", "no_tag", "db_failed", "ota_failed",
+               "size_required", "bad_chunk", "unknown_cmd", "internal"]
+    },
+    "ErrorReply": {
+      "type": "object",
+      "properties": {
+        "ok": { "const": false },
+        "error": { "type": "string" },
+        "code": { "$ref": "#/$defs/ErrorCode" }
+      },
+      "required": ["ok", "error", "code"],
+      "additionalProperties": false
+    },
+    "Ack": {
+      "type": "object",
+      "properties": { "ok": { "const": true } },
+      "required": ["ok"],
+      "additionalProperties": false
+    },
+    "LastWrite": {
+      "type": "object",
+      "properties": {
+        "done": { "type": "boolean" },
+        "ok": { "type": "boolean" },
+        "encrypted": { "type": "boolean" },
+        "uid": { "type": "string" },
+        "error": { "type": "string" }
+      },
+      "required": ["done", "ok", "encrypted", "uid", "error"],
+      "additionalProperties": false
+    }
+  }
+}

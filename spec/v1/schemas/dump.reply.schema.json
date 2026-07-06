@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spoolid.github.io/schemas/v1/dump.reply.schema.json",
+  "title": "DumpReply",
+  "type": "object",
+  "properties": {
+    "ok": { "const": true },
+    "uid": { "$ref": "common.schema.json#/$defs/Uid" },
+    "encrypted": { "type": "boolean" },
+    "data": { "type": "string", "pattern": "^[0-9A-Fa-f]*$" }
+  },
+  "required": ["ok", "uid", "encrypted", "data"],
+  "additionalProperties": false
+}

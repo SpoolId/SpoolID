@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spoolid.github.io/schemas/v2/db.data.reply.schema.json",
+  "title": "DbDataReply",
+  "type": "object",
+  "properties": {
+    "ok": { "const": true },
+    "written": { "type": "integer", "minimum": 0 }
+  },
+  "required": ["ok", "written"],
+  "additionalProperties": false
+}

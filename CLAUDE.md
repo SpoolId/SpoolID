@@ -33,6 +33,11 @@ Both transports are thin shells over the same core: `rfid_writer`, `config`, `ma
 `ui_spec`, `spool_data`, `creality_crypto`. When adding a capability, add it to the core and
 expose it through *both* `web_server.cpp` and `serial_proto.cpp`.
 
+**The wire contract is specified in `spec/`** (JSON Schema 2020-12 + PROTOCOL.md, versioned:
+`spec/v1/` = frozen 1.x behavior, `spec/v2/` = unified target; see issue #18). Validate with
+`pnpm --dir spec/ts install && pnpm --dir spec/ts validate`. Any change to a reply shape in
+`web_server.cpp` / `serial_proto.cpp` must update the schemas + fixtures in the same PR.
+
 ### Crypto (do not get this wrong — it determines whether the printer reads the tag)
 `firmware/src/creality_crypto.cpp` — AES-128-ECB with two fixed keys (`U_KEY`, `D_KEY`,
 reverse-engineered from the K2-RFID reference: https://github.com/DnG-Crafts/K2-RFID). Mode 0 (`U_KEY`): the UID replicated to 16
@@ -71,7 +76,7 @@ cp firmware/include/secrets.h.example firmware/include/secrets.h   # if missing
 .venv/bin/pio device monitor -d firmware         # serial @115200
 
 # Desktop app (Wails: Go backend + Vite/TS frontend).
-# One-time: install Go 1.23+, Node 18+ with pnpm (corepack enable), and the Wails CLI:
+# One-time: install Go 1.23+, Node 26+ with pnpm (npm i -g pnpm), and the Wails CLI:
 #   go install github.com/wailsapp/wails/v2/cmd/wails@latest
 cd desktop
 wails dev            # hot-reload dev window

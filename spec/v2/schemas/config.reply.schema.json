@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spoolid.github.io/schemas/v2/config.reply.schema.json",
+  "title": "ConfigReply",
+  "type": "object",
+  "properties": {
+    "ok": { "const": true },
+    "wifiSsid": { "type": "string" },
+    "apSsid": { "type": "string" },
+    "hostname": { "type": "string" },
+    "logLevel": { "type": "integer", "minimum": 0, "maximum": 4 },
+    "baud": { "type": "integer", "minimum": 1 }
+  },
+  "required": ["ok", "wifiSsid", "apSsid", "hostname", "logLevel", "baud"],
+  "additionalProperties": false
+}

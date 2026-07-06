@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spoolid.github.io/schemas/v2/write.reply.schema.json",
+  "title": "WriteReply",
+  "type": "object",
+  "properties": {
+    "ok": { "const": true },
+    "staged": { "const": true }
+  },
+  "required": ["ok", "staged"],
+  "additionalProperties": false
+}

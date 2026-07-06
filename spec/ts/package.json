@@ -1,0 +1,14 @@
+{
+  "name": "@spoolid/core",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "SpoolID shared core: wire-contract validation tooling (full package lands with the shared-client refactor)",
+  "scripts": {
+    "validate": "node scripts/validate.mjs"
+  },
+  "devDependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1"
+  }
+}

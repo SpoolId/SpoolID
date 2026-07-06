@@ -39,9 +39,11 @@ jobs:
           python-version: "3.12"
       - uses: actions/setup-node@v6
         with:
-          node-version: "22"
-      - name: Enable pnpm (via corepack)
-        run: corepack enable
+          node-version: "26"
+      # corepack is not bundled with Node >= 25; use the pnpm action instead.
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
       - name: Install PlatformIO
         run: pip install platformio
       - name: Prepare generated + secret files
@@ -101,9 +103,11 @@ jobs:
           go-version: "1.25"
       - uses: actions/setup-node@v6
         with:
-          node-version: "22"
-      - name: Enable pnpm (via corepack)
-        run: corepack enable
+          node-version: "26"
+      # corepack is not bundled with Node >= 25; use the pnpm action instead.
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
       - name: Install Wails system deps (Linux)
         if: runner.os == 'Linux'
         run: |
