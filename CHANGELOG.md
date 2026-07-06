@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.0.0](https://github.com/SpoolId/SpoolID/compare/v1.0.0...v2.0.0) (2026-07-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* wire replies are additive on the wire, but the contract now requires the ok envelope everywhere and code on every error; clients should gate on the new protocol field.
+
+### Features
+
+* **spec:** versioned wire-contract spec (v1 as-is + v2 target) ([6077197](https://github.com/SpoolId/SpoolID/commit/6077197dbadac12f5978b201d5886302a515c8e9)), closes [#18](https://github.com/SpoolId/SpoolID/issues/18)
+* unify wire protocol (v2 envelope, error codes, protocol field) ([1998b0b](https://github.com/SpoolId/SpoolID/commit/1998b0b48e855f1d21b529fd403c562dbe12e75c)), closes [#18](https://github.com/SpoolId/SpoolID/issues/18)
+
 ## 1.0.0 (2026-07-02)
 
 
