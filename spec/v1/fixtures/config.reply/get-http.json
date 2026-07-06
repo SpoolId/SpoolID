@@ -1,1 +1,7 @@
-{"wifiSsid": "MyWifi", "apSsid": "SpoolID", "hostname": "spoolid", "logLevel": 3, "baud": 115200}
+{
+  "wifiSsid": "MyWifi",
+  "apSsid": "SpoolID",
+  "hostname": "spoolid",
+  "logLevel": 3,
+  "baud": 115200
+}
