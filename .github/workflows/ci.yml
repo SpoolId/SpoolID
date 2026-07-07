@@ -53,7 +53,7 @@ jobs:
         with:
           node-version: "26"
       # corepack is not bundled with Node >= 25; use the pnpm action instead.
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 11
       - name: Validate schemas + fixtures
@@ -93,7 +93,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: "26"
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 11
       - name: Validate firmware output against spec schemas
@@ -115,7 +115,7 @@ jobs:
         with:
           node-version: "26"
       # corepack is not bundled with Node >= 25; use the pnpm action instead.
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 11
       - name: Generate DB header + build/gzip web assets
@@ -139,7 +139,7 @@ jobs:
         with:
           node-version: "26"
       # corepack is not bundled with Node >= 25; use the pnpm action instead.
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 11
       - name: Install Wails system deps

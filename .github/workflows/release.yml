@@ -41,7 +41,7 @@ jobs:
         with:
           node-version: "26"
       # corepack is not bundled with Node >= 25; use the pnpm action instead.
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 11
       - name: Install PlatformIO
@@ -105,7 +105,7 @@ jobs:
         with:
           node-version: "26"
       # corepack is not bundled with Node >= 25; use the pnpm action instead.
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 11
       - name: Install Wails system deps (Linux)
