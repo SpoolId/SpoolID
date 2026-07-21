@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/wailsapp/wails/v2 v2.12.0
-	go.bug.st/serial v1.7.1
+	go.bug.st/serial v1.8.0
 )
 
 require (
